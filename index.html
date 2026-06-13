@@ -1,14 +1,207 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
 <meta charset="utf-8">
-<title>VR Test</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🧠 能力評測塔</title>
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<style>
+body{margin:0;overflow:hidden;font-family:Arial}
+#ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100}
+#panel{position:absolute;top:20px;left:20px;background:rgba(255,255,255,.9);padding:20px;border-radius:10px;pointer-events:auto;min-width:260px;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+#panel h3{margin:0 0 15px 0;color:#333;font-size:16px}
+.stat{display:flex;justify-content:space-between;margin:8px 0;font-size:13px;color:#555}
+.val{color:#f97316;font-weight:bold;font-size:14px}
+#toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.88);color:white;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:bold;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.on{opacity:1}
+#gaze{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:90px;height:90px;border:3px solid #f97316;border-radius:50%;display:none;z-index:99;pointer-events:none}
+#gaze::after{content:attr(data-txt);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#f97316;font-weight:bold;font-size:12px}
+#result{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);color:white;display:none;overflow-y:auto;z-index:200;padding:50px 40px}
+#result.on{display:block}
+#result h1{font-size:36px;color:#f97316;margin-bottom:30px;text-align:center}
+.rcard{margin:20px 0;padding:20px;background:rgba(255,255,255,.08);border-left:4px solid #f97316;border-radius:6px}
+</style>
 </head>
 <body>
-<a-scene background="color:#000">
-  <a-box position="0 1 -5" rotation="0 45 0" color="#FF6B6B"></a-box>
-  <a-entity camera position="0 1.6 0" look-controls wasd-controls></a-entity>
+
+<a-scene vr-mode-ui="enabled:true" background="color:#000">
+  <a-light type="ambient" intensity="0.5"></a-light>
+  <a-entity position="0 1.6 0">
+    <a-camera look-controls wasd-controls="acceleration:20">
+      <a-cursor color="#f97316" fuse="false" raycaster="objects:.btn"></a-cursor>
+    </a-camera>
+  </a-entity>
+
+  <!-- Room 1 Logic -->
+  <a-entity id="room1" visible="true">
+    <a-sky color="#0a1929"></a-sky>
+    <a-plane color="#0d3557" width="30" height="12" position="0 6 -15"></a-plane>
+    <a-plane color="#0f4a7a" width="30" height="12" position="-15 6 0" rotation="0 90 0"></a-plane>
+    <a-plane color="#0f4a7a" width="30" height="12" position="15 6 0" rotation="0 -90 0"></a-plane>
+    <a-plane color="#051829" width="30" height="30" rotation="-90 0 0"></a-plane>
+    <a-light type="point" position="0 8 0" color="#00d4ff" intensity="1.2" distance="20"></a-light>
+    <a-box class="btn" position="-3 2.5 -8" scale="0.7 0.7 0.7" color="#00ffff" data-score="0" data-val="20" animation="property:rotation;from:0 0 0;to:0 360 0;loop:true;dur:4000;easing:linear"></a-box>
+    <a-box class="btn" position="0 2.5 -8" scale="0.7 0.7 0.7" color="#00ffff" data-score="0" data-val="20" animation="property:rotation;from:0 0 0;to:0 360 0;loop:true;dur:4000;easing:linear"></a-box>
+    <a-box class="btn" position="3 2.5 -8" scale="0.7 0.7 0.7" color="#00ffff" data-score="0" data-val="20" animation="property:rotation;from:0 0 0;to:0 360 0;loop:true;dur:4000;easing:linear"></a-box>
+    <a-text value="🧩 邏輯室" position="0 10 -8" align="center" color="#00d4ff" width="5" font-size="50"></a-text>
+    <a-box class="btn" position="0 2 5" scale="2.5 0.6 1" color="#00d4ff" data-next="2"></a-box>
+    <a-text value="下一個 →" position="0 2 5" align="center" color="white" width="4"></a-text>
+  </a-entity>
+
+  <!-- Room 2 Creativity -->
+  <a-entity id="room2" visible="false">
+    <a-sky color="#3a2c1a"></a-sky>
+    <a-plane color="#6b3f2e" width="30" height="12" position="0 6 -15"></a-plane>
+    <a-plane color="#8b5a3c" width="30" height="12" position="-15 6 0" rotation="0 90 0"></a-plane>
+    <a-plane color="#8b5a3c" width="30" height="12" position="15 6 0" rotation="0 -90 0"></a-plane>
+    <a-plane color="#c9985a" width="30" height="30" rotation="-90 0 0"></a-plane>
+    <a-light type="point" position="0 8 0" color="#ffaa44" intensity="1.2" distance="20"></a-light>
+    <a-sphere class="btn" position="-5 2 -2" radius="0.6" color="#ff6b6b" data-score="1" data-val="20"></a-sphere>
+    <a-sphere class="btn" position="-1.5 2 -2" radius="0.6" color="#4ecdc4" data-score="1" data-val="20"></a-sphere>
+    <a-sphere class="btn" position="2 2 -2" radius="0.6" color="#ffe66d" data-score="1" data-val="20"></a-sphere>
+    <a-sphere class="btn" position="5.5 2 -2" radius="0.6" color="#c7a0ff" data-score="1" data-val="20"></a-sphere>
+    <a-text value="🎨 創意室" position="0 10 -8" align="center" color="#ffaa44" width="5" font-size="50"></a-text>
+    <a-box class="btn" position="0 2 5" scale="2.5 0.6 1" color="#ffaa44" data-next="3"></a-box>
+    <a-text value="下一個 →" position="0 2 5" align="center" color="white" width="4"></a-text>
+  </a-entity>
+
+  <!-- Room 3 Memory -->
+  <a-entity id="room3" visible="false">
+    <a-sky color="#2a1a4a"></a-sky>
+    <a-plane color="#3d2561" width="30" height="12" position="0 6 -15"></a-plane>
+    <a-plane color="#553399" width="30" height="12" position="-15 6 0" rotation="0 90 0"></a-plane>
+    <a-plane color="#553399" width="30" height="12" position="15 6 0" rotation="0 -90 0"></a-plane>
+    <a-plane color="#6b4c9a" width="30" height="30" rotation="-90 0 0"></a-plane>
+    <a-light type="point" position="0 8 0" color="#cc88ff" intensity="1.2" distance="20"></a-light>
+    <a-box class="btn" position="0 3 -8" scale="2 1.5 0.3" color="#6b4c9a" data-score="2" data-val="30"></a-box>
+    <a-text value="📖 記憶室" position="0 10 -8" align="center" color="#cc88ff" width="5" font-size="50"></a-text>
+    <a-box class="btn" position="0 2 5" scale="2.5 0.6 1" color="#cc88ff" data-next="4"></a-box>
+    <a-text value="下一個 →" position="0 2 5" align="center" color="white" width="4"></a-text>
+  </a-entity>
+
+  <!-- Room 4 Social -->
+  <a-entity id="room4" visible="false">
+    <a-sky color="#1a3a2a"></a-sky>
+    <a-plane color="#2d5a45" width="30" height="12" position="0 6 -15"></a-plane>
+    <a-plane color="#4a8a6b" width="30" height="12" position="-15 6 0" rotation="0 90 0"></a-plane>
+    <a-plane color="#4a8a6b" width="30" height="12" position="15 6 0" rotation="0 -90 0"></a-plane>
+    <a-plane color="#6abf8a" width="30" height="30" rotation="-90 0 0"></a-plane>
+    <a-light type="point" position="0 8 0" color="#66dd66" intensity="1.2" distance="20"></a-light>
+    <a-sphere class="btn" position="-5 2 -2" radius="0.6" color="#90ee90" data-score="3" data-val="20"></a-sphere>
+    <a-sphere class="btn" position="0 2 -2" radius="0.6" color="#ffff99" data-score="3" data-val="20"></a-sphere>
+    <a-sphere class="btn" position="5 2 -2" radius="0.6" color="#ff9999" data-score="3" data-val="20"></a-sphere>
+    <a-text value="💬 社交室" position="0 10 -8" align="center" color="#66dd66" width="5" font-size="50"></a-text>
+    <a-box class="btn" position="0 2 5" scale="2.5 0.6 1" color="#66dd66" data-next="5"></a-box>
+    <a-text value="下一個 →" position="0 2 5" align="center" color="white" width="4"></a-text>
+  </a-entity>
+
+  <!-- Room 5 Decision -->
+  <a-entity id="room5" visible="false">
+    <a-sky color="#3a3a1a"></a-sky>
+    <a-plane color="#5a5a2a" width="30" height="12" position="0 6 -15"></a-plane>
+    <a-plane color="#7a7a3a" width="30" height="12" position="-15 6 0" rotation="0 90 0"></a-plane>
+    <a-plane color="#7a7a3a" width="30" height="12" position="15 6 0" rotation="0 -90 0"></a-plane>
+    <a-plane color="#9a9a5a" width="30" height="30" rotation="-90 0 0"></a-plane>
+    <a-light type="point" position="0 8 0" color="#ffdd00" intensity="1.3" distance="20"></a-light>
+    <a-sphere class="btn" position="-6 2 -2" radius="0.6" color="#ff6b6b" data-score="4" data-val="20"></a-sphere>
+    <a-sphere class="btn" position="-2 2 -2" radius="0.6" color="#4ecdc4" data-score="4" data-val="20"></a-sphere>
+    <a-sphere class="btn" position="2 2 -2" radius="0.6" color="#ffe66d" data-score="4" data-val="20"></a-sphere>
+    <a-sphere class="btn" position="6 2 -2" radius="0.6" color="#c7a0ff" data-score="4" data-val="20"></a-sphere>
+    <a-text value="⚖️ 決策室" position="0 10 -8" align="center" color="#ffdd00" width="5" font-size="50"></a-text>
+    <a-box class="btn" position="0 2 5" scale="2.5 0.6 1" color="#ffdd00" data-result="1"></a-box>
+    <a-text value="查看結果 ✓" position="0 2 5" align="center" color="black" width="4"></a-text>
+  </a-entity>
 </a-scene>
+
+<div id="ui">
+  <div id="panel">
+    <h3>🧠 能力評測塔</h3>
+    <div class="stat"><span>房間:</span><span id="room" class="val">1/5</span></div>
+    <div class="stat"><span>邏輯:</span><span id="s0" class="val">0%</span></div>
+    <div class="stat"><span>創意:</span><span id="s1" class="val">0%</span></div>
+    <div class="stat"><span>記憶:</span><span id="s2" class="val">0%</span></div>
+    <div class="stat"><span>社交:</span><span id="s3" class="val">0%</span></div>
+    <div class="stat"><span>決策:</span><span id="s4" class="val">0%</span></div>
+  </div>
+  <div id="toast"></div>
+  <div id="gaze"></div>
+  <div id="result">
+    <h1>🧠 評測結果</h1>
+    <div id="rcontent"></div>
+  </div>
+</div>
+
+<script>
+const G={room:1,scores:[0,0,0,0,0],target:null,t0:0};
+const NAMES=['邏輯','創意','記憶','社交','決策'];
+
+function show(id){document.getElementById('toast').textContent=id;document.getElementById('toast').classList.add('on');setTimeout(()=>document.getElementById('toast').classList.remove('on'),2000)}
+
+function upd(){
+  document.getElementById('room').textContent=`${G.room}/5`;
+  for(let i=0;i<5;i++)document.getElementById(`s${i}`).textContent=`${G.scores[i]}%`;
+}
+
+function room(n){
+  for(let i=1;i<=5;i++)document.getElementById(`room${i}`).setAttribute('visible',i===n);
+  G.room=n;
+  upd();
+  show(`進入房間${n}`);
+}
+
+function res(){
+  const avg=(G.scores[0]+G.scores[1]+G.scores[2]+G.scores[3]+G.scores[4])/5;
+  let html='';
+  for(let i=0;i<5;i++)html+=`<div class="rcard"><strong>${NAMES[i]}:</strong> ${G.scores[i]}%</div>`;
+  html+=`<div class="rcard" style="margin-top:30px;border:2px solid #f97316"><strong>評語:</strong><br>${avg>=80?'🌟 全能型':avg>=60?'✨ 平衡型':'🎯 專長型'}</div>`;
+  document.getElementById('rcontent').innerHTML=html;
+  document.getElementById('result').classList.add('on');
+}
+
+function gaze(el){
+  G.target=el;
+  G.t0=Date.now();
+  const g=document.getElementById('gaze');
+  g.style.display='block';
+  
+  const tick=()=>{
+    const e=Date.now()-G.t0;
+    const p=Math.min(e/2000,1);
+    g.setAttribute('data-txt',Math.round(p*100)+'%');
+    if(p<1&&G.target===el)requestAnimationFrame(tick);
+    else if(p>=1){G.target=null;g.style.display='none';click(el)}
+  };
+  tick();
+}
+
+function stopgaze(){G.target=null;document.getElementById('gaze').style.display='none'}
+
+function click(el){
+  const nxt=el.getAttribute('data-next');
+  const res2=el.getAttribute('data-result');
+  const sc=el.getAttribute('data-score');
+  const vl=parseInt(el.getAttribute('data-val')||'20');
+  
+  if(nxt){room(parseInt(nxt));return}
+  if(res2){res();return}
+  if(sc!==null){
+    const idx=parseInt(sc);
+    G.scores[idx]=Math.min(100,G.scores[idx]+vl);
+    show(`${NAMES[idx]}+${vl}`);
+    upd();
+    el.setAttribute('animation__pop','property:scale;from:1 1 1;to:1.15 1.15 1.15;dur:200;easing:easeOutQuad');
+  }
+}
+
+document.querySelector('a-scene').addEventListener('loaded',()=>{
+  upd();
+  document.querySelectorAll('.btn').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{if(!G.target)gaze(el)});
+    el.addEventListener('mouseleave',()=>stopgaze());
+    el.addEventListener('click',()=>{if(G.target)stopgaze();click(el)});
+  });
+});
+</script>
+
 </body>
 </html>
